@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suris Character Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="playerInfo">
+        <h1><i class="fa-solid fa-user"></i> Generate your character!</h1>
+        <input type="text" id="playerInput" placeholder="Enter a character info / your own info" />
+        <button id="fetchButton">Generate Character Card</button>
+    </div>
+    <div class="character-sheet" id="characterSheet" style="display: none;">
+        <h2><i class="fa-solid fa-user"></i> <span id="name"></span></h2>
+        <p class="description"><i class="fa-solid fa-scroll"></i> <span id="description"></span></p>
+
+        <div class="info">
+            <p><i class="fa-solid fa-handshake"></i> Alignment: <span id="alignment"></span></p>
+            <p><i class="fa-solid fa-coins"></i> Coins: <span id="copperCoins"></span>CC <span id="silverCoins"></span>SC <span id="goldCoins"></span>GC <span id="platinumCoins"></span>PC</p>
+            <p><i class="fa-solid fa-hourglass-half"></i> Age: <span id="age"></span></p>
+            <p><i class="fa-solid fa-chart-line"></i> Level: <span id="level"></span></p>
+            <p><i class="fa-solid fa-dragon"></i> Race: <span id="race"></span></p>
+            <p><i class="fa-solid fa-hat-wizard"></i> Class: <span id="class"></span></p>
+            <p><i class="fa-solid fa-shirt"></i> Clothes: <span id="clothes"></span></p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('attacks')"><i class="fa-solid fa-crosshairs"></i> Attacks</button>
+            <button class="tab-button" onclick="showTab('base_attributes')"><i class="fa-solid fa-dumbbell"></i> Attributes</button>
+            <button class="tab-button" onclick="showTab('equipment')"><i class="fa-solid fa-box-open"></i> Equipment</button>
+        </div>
+
+        <div id="attacks" class="tab-content active">
+            <h3>Attacks</h3>
+            <ul id="attacks-list"></ul>
+        </div>
+
+        <div id="base_attributes" class="tab-content">
+            <h3>Attributes</h3>
+            <ul>
+                <li>💪 Strength: <span id="strength"></span></li>
+                <li>🏃 Dexterity: <span id="dexterity"></span></li>
+                <li>🛡️ Constitution: <span id="constitution"></span></li>
+                <li>🧠 Intelligence: <span id="intelligence"></span></li>
+                <li>🔮 Wisdom: <span id="wisdom"></span></li>
+                <li>🗣️ Charisma: <span id="charisma"></span></li>
+            </ul>
+        </div>
+
+        <div id="equipment" class="tab-content">
+            <h3>Equipment</h3>
+            <ul id="equipment-list"></ul>
+        </div>
+
+        <button onclick="copyValues()"><i class="fa-solid fa-copy"></i> Copy to Clipboard</button>
+    </div>
+
+    <script>
+        let playerData = {};
+        document.getElementById('fetchButton').addEventListener('click', async () => {
+            const player = document.getElementById('playerInput').value;
+            const api = 'http://localhost:11434/api/chat'; //standard ollama api. if you have another open-ai-compatible api that supports structured outputs, enter the api url here.
+
+            const requestBody = {
+                model: "llama3", //I like to use LLaMA3, but you may set this to any pulled ollama-model you like. LLaMA3 produces great results tho.
+                messages: [{ role: "user", content: `Please provide a detailed character profile in a JSON format. The character should be well-rounded and engaging. The character in focus is: ${player}.` }],
+                stream: false,
+                format: {
+                    type: "object",
+                    properties: {
+                        name: { type: "string" },
+                        description: { type: "string", minLength: 1, maxLength: 500 },
+                        alignment: { type: "string", enum: ["lawful-good", "neutral-good", "chaotic-good", "lawful-neutral", "true-neutral", "chaotic-neutral", "lawful-evil", "neutral-evil", "chaotic-evil"] },
+                        copperCoins: { type: "integer", minimum: 0, maximum: 99 },
+                        silverCoins: { type: "integer", minimum: 0, maximum: 99 },
+                        goldCoins: { type: "integer", minimum: 0, maximum: 99 },
+                        platinumCoins: { type: "integer", minimum: 0, maximum: 10 },
+                        age: { type: "integer", minimum: 0 },
+                        level: { type: "integer", minimum: 1, maximum: 100 },
+                        clothes: { type: "string" },
+                        "race": {
+                            "type": "string",
+                            "enum": [
+                                "Human",
+                                "Elf",
+                                "Dwarf",
+                                "Orc",
+                                "Kobold"
+                            ]
+                        },
+                        "class": {
+                            "type": "string",
+                            "enum": [
+                                "Warrior",
+                                "Mage",
+                                "Rogue",
+                                "Cleric",
+                                "Ranger",
+                                "Paladin",
+                                "Druid",
+                                "Necromancer",
+                                "Sorcerer",
+                                "Assasin",
+                                "Tank",
+                                "Archer",
+                                "Summoner"
+                            ]
+                        },
+                        attacks: {
+                            type: "array",
+                            minItems: 4,
+                            maxItems: 4,
+                            items: {
+                                type: "object",
+                                properties: {
+                                    name: { "type": "string" },
+                                    type: { 
+                                        type: "string",
+                                        enum: ["Healing", "Physical-Damage", "Special-Damage", "Field-Damage", "Enemy-Defense-Down", "Defense-Up", "Team-Healing"]
+                                    },
+                                    strength: { "type": "integer", "minimum": 30, "maximum": 150 },
+                                    usage_limit: { "type": "integer", "minimum": 1, "maximum": 30 }
+                                },
+                                required: ["name", "type", "strength", "usage_limit"]
+                            }
+                        },
+                        base_attributes: { type: "object", properties: {
+                            strength: { type: "integer", minimum: 1, maximum: 31 },
+                            dexterity: { type: "integer", minimum: 1, maximum: 31 },
+                            constitution: { type: "integer", minimum: 1, maximum: 31 },
+                            intelligence: { type: "integer", minimum: 1, maximum: 31 },
+                            wisdom: { type: "integer", minimum: 1, maximum: 31 },
+                            charisma: { type: "integer", minimum: 1, maximum: 31 }
+                        },
+                        required: ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
+                    },
+                        equipment: { type: "array", minItems: 1, maxItems: 10, items: { type: "string", minLength: 1, maxLength: 20 } }
+                    },
+                    required: ["name", "description", "alignment", "copperCoins", "silverCoins", "goldCoins", "platinumCoins", "age", "level", "clothes", "race", "class", "attacks", "base_attributes", "equipment"]
+                }
+            };
+
+            try {
+                const response = await fetch(api, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (response.ok) {
+                    const responseData = await response.json();
+                    
+                    if (responseData.message && responseData.message.content) {
+                        try {
+                            playerData = JSON.parse(responseData.message.content);
+
+                            document.getElementById('characterSheet').style.display = 'block';
+                            document.getElementById('playerInfo').style.display = 'none';
+
+                            document.getElementById('name').textContent = playerData.name;
+                            document.getElementById('description').textContent = playerData.description;
+                            document.getElementById('alignment').textContent = playerData.alignment.replace('-', ' ').toUpperCase();
+                            document.getElementById('copperCoins').textContent = playerData.copperCoins;
+                            document.getElementById('silverCoins').textContent = playerData.silverCoins;
+                            document.getElementById('goldCoins').textContent = playerData.goldCoins;
+                            document.getElementById('platinumCoins').textContent = playerData.platinumCoins;
+                            document.getElementById('age').textContent = playerData.age;
+                            document.getElementById('level').textContent = playerData.level;
+                            document.getElementById('race').textContent = playerData.race;
+                            document.getElementById('class').textContent = playerData.class;
+                            document.getElementById('clothes').textContent = playerData.clothes;
+                            document.getElementById('strength').textContent = playerData.base_attributes.strength;
+                            document.getElementById('dexterity').textContent = playerData.base_attributes.dexterity;
+                            document.getElementById('constitution').textContent = playerData.base_attributes.constitution;
+                            document.getElementById('intelligence').textContent = playerData.base_attributes.intelligence;
+                            document.getElementById('wisdom').textContent = playerData.base_attributes.wisdom;
+                            document.getElementById('charisma').textContent = playerData.base_attributes.charisma;
+
+                            const attacksList = document.getElementById('attacks-list');
+                            playerData.attacks.forEach(attack => {
+                                let li = document.createElement('li');
+                                li.innerHTML = `<strong>${attack.name}</strong> 
+                                                (${attack.type.replace(/-/g, ' ')}, ${attack.usage_limit}PP): 
+                                                <em>${attack.strength}</em>`;
+                                attacksList.appendChild(li);
+                            });
+
+                            const equipmentList = document.getElementById('equipment-list');
+                            playerData.equipment.forEach(item => {
+                                let li = document.createElement('li');
+                                li.textContent = item;
+                                equipmentList.appendChild(li);
+                            });
+                        } catch (parseError) {
+                            handleError("Invalid data format received.");
+                        }
+                    } else {
+                        handleError("Unexpected response format.");
+                    }
+                } else {
+                    handleError("An error occurred. Please try again.");
+                }
+            } catch (error) {
+                handleError("An error occurred. Please try again.");
+            }
+        });
+
+        function handleError(message) {
+            document.getElementById('output').textContent = message;
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function copyValues() {
+            const markdown = `**${playerData.name}**
+===========================
+
+**Description**
+---------------
+
+${playerData.description}
+
+**Info**
+------
+
+* Alignment: ${playerData.alignment}
+* Coins: ${playerData.copperCoins} CC, ${playerData.silverCoins} SC, ${playerData.goldCoins} GC, ${playerData.platinumCoins} PC
+* Age: ${playerData.age}
+* Level: ${playerData.level}
+* Race: ${playerData.race}
+* Class: ${playerData.class}
+* Clothes: ${playerData.clothes}
+
+**Attributes**
+------------
+
+* Strength: ${playerData.base_attributes.strength}
+* Dexterity: ${playerData.base_attributes.dexterity}
+* Constitution: ${playerData.base_attributes.constitution}
+* Intelligence: ${playerData.base_attributes.intelligence}
+* Wisdom: ${playerData.base_attributes.wisdom}
+* Charisma: ${playerData.base_attributes.charisma}
+
+**Attacks**
+---------
+
+${playerData.attacks.map(attack => `* ${attack.name} (${attack.type.replace(/-/g, ' ')}, ${attack.usage_limit}PP): ${attack.strength}`).join('\n')}
+
+**Equipment**
+------------
+
+${playerData.equipment.map(item => `* ${item}`).join('\n')}`;
+
+            navigator.clipboard.writeText(markdown).then(() => {
+                alert('Copied to clipboard!');
+            }).catch(err => {
+                alert('Failed to copy to clipboard: ', err);
+            });
+        }
+    </script>
+
+</body>
+</html>
