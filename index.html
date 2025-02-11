@@ -15,31 +15,50 @@
     </div>
     <div class="character-sheet" id="characterSheet" style="display: none;">
         <h2><i class="fa-solid fa-user"></i> <span id="name"></span></h2>
-        <p class="description"><i class="fa-solid fa-scroll"></i> <span id="description"></span></p>
-
+        <p class="description"><i class="fa-solid fa-scroll"></i> <span id="biography"></span></p>
+    
         <div class="info">
             <p><i class="fa-solid fa-handshake"></i> Alignment: <span id="alignment"></span></p>
-            <p><i class="fa-solid fa-coins"></i> Coins: <span id="copperCoins"></span>CC <span id="silverCoins"></span>SC <span id="goldCoins"></span>GC <span id="platinumCoins"></span>PC</p>
             <p><i class="fa-solid fa-hourglass-half"></i> Age: <span id="age"></span></p>
             <p><i class="fa-solid fa-chart-line"></i> Level: <span id="level"></span></p>
+            <p><i class="fa-solid fa-bolt"></i> Max Energy: <span id="max_energy"></span></p>
             <p><i class="fa-solid fa-dragon"></i> Race: <span id="race"></span></p>
             <p><i class="fa-solid fa-hat-wizard"></i> Class: <span id="class"></span></p>
-            <p><i class="fa-solid fa-shirt"></i> Clothes: <span id="clothes"></span></p>
         </div>
 
+        <div class="clothing">
+            <h3><i class="fa-solid fa-coins"></i> Wallet</h3>
+            <ul class="wallet-list">
+                <li>🟤 Copper: <span id="copperCoins"></span> CC</li>
+                <li>⚪ Silver: <span id="silverCoins"></span> SC</li>
+                <li>🟡 Gold: <span id="goldCoins"></span> GC</li>
+                <li>🔵 Platinum: <span id="platinumCoins"></span> PC</li>
+            </ul>
+        </div>
+    
+        <div class="clothing">
+            <h3><i class="fa-solid fa-tshirt"></i> Clothing</h3>
+            <ul>
+                <li>🧢 Headwear: <span id="headwear"></span></li>
+                <li>👕 Body: <span id="body"></span></li>
+                <li>👞 Footwear: <span id="footwear"></span></li>
+                <li>💍 Accessories: <span id="accessories"></span></li>
+            </ul>
+        </div>
+    
         <div class="tabs">
             <button class="tab-button active" onclick="showTab('attacks')"><i class="fa-solid fa-crosshairs"></i> Attacks</button>
             <button class="tab-button" onclick="showTab('base_attributes')"><i class="fa-solid fa-dumbbell"></i> Attributes</button>
-            <button class="tab-button" onclick="showTab('equipment')"><i class="fa-solid fa-box-open"></i> Equipment</button>
+            <button class="tab-button" onclick="showTab('inventory')"><i class="fa-solid fa-box-open"></i> Inventory</button>
         </div>
-
+    
         <div id="attacks" class="tab-content active">
-            <h3>Attacks</h3>
+            <h3><i class="fa-solid fa-swords"></i> Attacks</h3>
             <ul id="attacks-list"></ul>
         </div>
-
+    
         <div id="base_attributes" class="tab-content">
-            <h3>Attributes</h3>
+            <h3><i class="fa-solid fa-user-shield"></i> Attributes</h3>
             <ul>
                 <li>💪 Strength: <span id="strength"></span></li>
                 <li>🏃 Dexterity: <span id="dexterity"></span></li>
@@ -49,14 +68,15 @@
                 <li>🗣️ Charisma: <span id="charisma"></span></li>
             </ul>
         </div>
-
-        <div id="equipment" class="tab-content">
-            <h3>Equipment</h3>
-            <ul id="equipment-list"></ul>
+    
+        <div id="inventory" class="tab-content">
+            <h3><i class="fa-solid fa-suitcase"></i> Inventory</h3>
+            <ul id="inventory-list"></ul>
         </div>
-
+    
         <button onclick="copyValues()"><i class="fa-solid fa-copy"></i> Copy to Clipboard</button>
     </div>
+    
 
     <script>
         let playerData = {};
@@ -65,83 +85,108 @@
             const api = 'http://localhost:11434/api/chat'; //standard ollama api. if you have another open-ai-compatible api that supports structured outputs, enter the api url here.
 
             const requestBody = {
-                model: "llama3", //I like to use LLaMA3, but you may set this to any pulled ollama-model you like. LLaMA3 produces great results tho.
-                messages: [{ role: "user", content: `Please provide a detailed character profile in a JSON format. The character should be well-rounded and engaging. The character in focus is: ${player}.` }],
+                model: "llama3",
+                messages: [{
+                    role: "user",
+                    content: `Please provide a detailed character profile in a JSON format. Clothing and stuff should be just a piece of clothing, not a whole description. Example: "white dress" would be great. Every player can be from level 1 to level 100 maximum. Attributes are like EV's from 1 to 31 max. Energy can go from minimum 7 to 80 maximum and should be based on class and level realistically. Make sense of stuff like the energy - lower leveled player should have lower energy, and no attack should cost more energy than the player has, but should be based on strength of the attack. The character should be well-rounded and engaging. The character in focus is: ${player}.`
+                }],
                 stream: false,
                 format: {
                     type: "object",
                     properties: {
                         name: { type: "string" },
-                        description: { type: "string", minLength: 1, maxLength: 500 },
-                        alignment: { type: "string", enum: ["lawful-good", "neutral-good", "chaotic-good", "lawful-neutral", "true-neutral", "chaotic-neutral", "lawful-evil", "neutral-evil", "chaotic-evil"] },
-                        copperCoins: { type: "integer", minimum: 0, maximum: 99 },
-                        silverCoins: { type: "integer", minimum: 0, maximum: 99 },
-                        goldCoins: { type: "integer", minimum: 0, maximum: 99 },
-                        platinumCoins: { type: "integer", minimum: 0, maximum: 10 },
+                        biography: { type: "string", minLength: 1, maxLength: 1000 },
+                        alignment: { 
+                            type: "string", 
+                            enum: ["lawful-good", "neutral-good", "chaotic-good", "lawful-neutral", "true-neutral", "chaotic-neutral", "lawful-evil", "neutral-evil", "chaotic-evil"]
+                        },
+                        wallet: {
+                            type: "object",
+                            properties: {
+                                copper: { type: "integer", minimum: 0, maximum: 99 },
+                                silver: { type: "integer", minimum: 0, maximum: 99 },
+                                gold: { type: "integer", minimum: 0, maximum: 99 },
+                                platinum: { type: "integer", minimum: 0, maximum: 10 }
+                            },
+                            required: ["copper", "silver", "gold", "platinum"]
+                        },
                         age: { type: "integer", minimum: 0 },
                         level: { type: "integer", minimum: 1, maximum: 100 },
-                        clothes: { type: "string" },
-                        "race": {
-                            "type": "string",
-                            "enum": [
-                                "Human",
-                                "Elf",
-                                "Dwarf",
-                                "Orc",
-                                "Kobold"
-                            ]
+                        max_energy: { type: "integer", minimum: 7, maximum: 80 },
+                        clothing: {
+                            type: "object",
+                            properties: {
+                                headwear: { type: "string", minLength: 1, maxLength: 50 },
+                                body: { type: "string", minLength: 1, maxLength: 50 },
+                                footwear: { type: "string", minLength: 1, maxLength: 50 },
+                                accessories: { type: "array", items: { type: "string", minLength: 1, maxLength: 50 }, minItems: 0, maxItems: 5 }
+                            },
+                            required: ["headwear", "body", "footwear", "accessories"]
                         },
-                        "class": {
-                            "type": "string",
-                            "enum": [
-                                "Warrior",
-                                "Mage",
-                                "Rogue",
-                                "Cleric",
-                                "Ranger",
-                                "Paladin",
-                                "Druid",
-                                "Necromancer",
-                                "Sorcerer",
-                                "Assasin",
-                                "Tank",
-                                "Archer",
-                                "Summoner"
+                        race: {
+                            type: "string",
+                            enum: ["Human", "Elf", "Dwarf", "Orc", "Kobold"]
+                        },
+                        class: {
+                            type: "string",
+                            enum: [
+                                "Warrior", "Mage", "Rogue", "Cleric", "Ranger", "Paladin", 
+                                "Druid", "Necromancer", "Sorcerer", "Assassin", "Tank", 
+                                "Archer", "Summoner"
                             ]
                         },
                         attacks: {
                             type: "array",
-                            minItems: 4,
-                            maxItems: 4,
+                            minItems: 2,
+                            maxItems: 6,
                             items: {
                                 type: "object",
                                 properties: {
-                                    name: { "type": "string" },
+                                    name: { type: "string" },
                                     type: { 
                                         type: "string",
                                         enum: ["Healing", "Physical-Damage", "Special-Damage", "Field-Damage", "Enemy-Defense-Down", "Defense-Up", "Team-Healing"]
                                     },
-                                    strength: { "type": "integer", "minimum": 30, "maximum": 150 },
-                                    usage_limit: { "type": "integer", "minimum": 1, "maximum": 30 }
+                                    strength: { type: "integer", minimum: 20, maximum: 150 },
+                                    energy_cost: { type: "integer", minimum: 2, maximum: 30 }
                                 },
-                                required: ["name", "type", "strength", "usage_limit"]
+                                required: ["name", "type", "strength", "energy_cost"]
                             }
                         },
-                        base_attributes: { type: "object", properties: {
-                            strength: { type: "integer", minimum: 1, maximum: 31 },
-                            dexterity: { type: "integer", minimum: 1, maximum: 31 },
-                            constitution: { type: "integer", minimum: 1, maximum: 31 },
-                            intelligence: { type: "integer", minimum: 1, maximum: 31 },
-                            wisdom: { type: "integer", minimum: 1, maximum: 31 },
-                            charisma: { type: "integer", minimum: 1, maximum: 31 }
+                        base_attributes: {
+                            type: "object",
+                            properties: {
+                                strength: { type: "integer", minimum: 1, maximum: 50 },
+                                dexterity: { type: "integer", minimum: 1, maximum: 50 },
+                                constitution: { type: "integer", minimum: 1, maximum: 50 },
+                                intelligence: { type: "integer", minimum: 1, maximum: 50 },
+                                wisdom: { type: "integer", minimum: 1, maximum: 50 },
+                                charisma: { type: "integer", minimum: 1, maximum: 50 }
+                            },
+                            required: ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
                         },
-                        required: ["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]
+                        inventory: {
+                            type: "array",
+                            minItems: 1,
+                            maxItems: 50,
+                            items: {
+                                type: "object",
+                                properties: {
+                                    name: { type: "string", minLength: 1, maxLength: 50 },
+                                    type: { 
+                                        type: "string", 
+                                        enum: ["Weapon", "Armor", "Potion", "Food", "Material", "Miscellaneous"]
+                                    },
+                                    quantity: { type: "integer", minimum: 1, maximum: 10 }
+                                },
+                                required: ["name", "type", "quantity"]
+                            }
+                        }
                     },
-                        equipment: { type: "array", minItems: 1, maxItems: 10, items: { type: "string", minLength: 1, maxLength: 20 } }
-                    },
-                    required: ["name", "description", "alignment", "copperCoins", "silverCoins", "goldCoins", "platinumCoins", "age", "level", "clothes", "race", "class", "attacks", "base_attributes", "equipment"]
+                    required: ["name", "biography", "alignment", "wallet", "age", "level", "max_energy", "clothing", "race", "class", "attacks", "base_attributes", "inventory"]
                 }
             };
+
 
             try {
                 const response = await fetch(api, {
@@ -159,42 +204,48 @@
                         try {
                             playerData = JSON.parse(responseData.message.content);
 
-                            document.getElementById('characterSheet').style.display = 'block';
+                            document.getElementById('characterSheet').style.display = 'inline';
                             document.getElementById('playerInfo').style.display = 'none';
 
-                            document.getElementById('name').textContent = playerData.name;
-                            document.getElementById('description').textContent = playerData.description;
-                            document.getElementById('alignment').textContent = playerData.alignment.replace('-', ' ').toUpperCase();
-                            document.getElementById('copperCoins').textContent = playerData.copperCoins;
-                            document.getElementById('silverCoins').textContent = playerData.silverCoins;
-                            document.getElementById('goldCoins').textContent = playerData.goldCoins;
-                            document.getElementById('platinumCoins').textContent = playerData.platinumCoins;
-                            document.getElementById('age').textContent = playerData.age;
-                            document.getElementById('level').textContent = playerData.level;
-                            document.getElementById('race').textContent = playerData.race;
-                            document.getElementById('class').textContent = playerData.class;
-                            document.getElementById('clothes').textContent = playerData.clothes;
-                            document.getElementById('strength').textContent = playerData.base_attributes.strength;
-                            document.getElementById('dexterity').textContent = playerData.base_attributes.dexterity;
-                            document.getElementById('constitution').textContent = playerData.base_attributes.constitution;
-                            document.getElementById('intelligence').textContent = playerData.base_attributes.intelligence;
-                            document.getElementById('wisdom').textContent = playerData.base_attributes.wisdom;
-                            document.getElementById('charisma').textContent = playerData.base_attributes.charisma;
+                            document.getElementById("name").textContent = playerData.name;
+                            document.getElementById("biography").textContent = playerData.biography;
+                            document.getElementById("alignment").textContent = playerData.alignment;
+                            document.getElementById("age").textContent = playerData.age;
+                            document.getElementById("level").textContent = playerData.level;
+                            document.getElementById("max_energy").textContent = playerData.max_energy;
+                            document.getElementById("race").textContent = playerData.race;
+                            document.getElementById("class").textContent = playerData.class;
+                            
+                            document.getElementById("copperCoins").textContent = playerData.wallet.copper || 0;
+                            document.getElementById("silverCoins").textContent = playerData.wallet.silver || 0;
+                            document.getElementById("goldCoins").textContent = playerData.wallet.gold || 0;
+                            document.getElementById("platinumCoins").textContent = playerData.wallet.platinum || 0;
 
-                            const attacksList = document.getElementById('attacks-list');
+                            document.getElementById("headwear").textContent = playerData.clothing.headwear || "None";
+                            document.getElementById("body").textContent = playerData.clothing.body || "None";
+                            document.getElementById("footwear").textContent = playerData.clothing.footwear || "None";
+                            document.getElementById("accessories").textContent = playerData.clothing.accessories || "None";
+
+                            document.getElementById("strength").textContent = playerData.base_attributes.strength;
+                            document.getElementById("dexterity").textContent = playerData.base_attributes.dexterity;
+                            document.getElementById("constitution").textContent = playerData.base_attributes.constitution;
+                            document.getElementById("intelligence").textContent = playerData.base_attributes.intelligence;
+                            document.getElementById("wisdom").textContent = playerData.base_attributes.wisdom;
+                            document.getElementById("charisma").textContent = playerData.base_attributes.charisma;
+
+                            const attacksList = document.getElementById("attacks-list");
                             playerData.attacks.forEach(attack => {
-                                let li = document.createElement('li');
-                                li.innerHTML = `<strong>${attack.name}</strong> 
-                                                (${attack.type.replace(/-/g, ' ')}, ${attack.usage_limit}PP): 
-                                                <em>${attack.strength}</em>`;
+                                let li = document.createElement("li");
+                                li.innerHTML = `<strong>${attack.name}</strong> - Damage: ${attack.strength} (${attack.type} - ${attack.energy_cost} Energy)`;
                                 attacksList.appendChild(li);
                             });
 
-                            const equipmentList = document.getElementById('equipment-list');
-                            playerData.equipment.forEach(item => {
-                                let li = document.createElement('li');
-                                li.textContent = item;
-                                equipmentList.appendChild(li);
+                            const inventoryList = document.getElementById("inventory-list");
+                            inventoryList.innerHTML = "";
+                            playerData.inventory.forEach(item => {
+                                let li = document.createElement("li");
+                                li.innerHTML = `<strong>${item.name}</strong> - Type: ${item.type} (${item.quantity})`;
+                                inventoryList.appendChild(li);
                             });
                         } catch (parseError) {
                             handleError("Invalid data format received.");
@@ -228,18 +279,22 @@
 **Description**
 ---------------
 
-${playerData.description}
+${playerData.biography}
 
 **Info**
 ------
 
 * Alignment: ${playerData.alignment}
-* Coins: ${playerData.copperCoins} CC, ${playerData.silverCoins} SC, ${playerData.goldCoins} GC, ${playerData.platinumCoins} PC
+* Coins: ${playerData.wallet.copper} CC, ${playerData.wallet.silver} SC, ${playerData.wallet.gold} GC, ${playerData.wallet.platinum} PC
 * Age: ${playerData.age}
 * Level: ${playerData.level}
 * Race: ${playerData.race}
 * Class: ${playerData.class}
-* Clothes: ${playerData.clothes}
+* Max Energy: ${playerData.max_energy}
+* Headwear: ${playerData.clothing.headwear || "None"}
+* Body: ${playerData.clothing.body || "None"}
+* Footwear: ${playerData.clothing.footwear || "None"}
+* Accessories: ${playerData.clothing.accessories.join(', ') || "None"}
 
 **Attributes**
 ------------
@@ -254,12 +309,12 @@ ${playerData.description}
 **Attacks**
 ---------
 
-${playerData.attacks.map(attack => `* ${attack.name} (${attack.type.replace(/-/g, ' ')}, ${attack.usage_limit}PP): ${attack.strength}`).join('\n')}
+${playerData.attacks.map(item => `* **${item.name}** - Damage: ${item.strength} (${item.type} - ${item.energy_cost} Energy)`).join('\n')}
 
-**Equipment**
+**Inventory**
 ------------
 
-${playerData.equipment.map(item => `* ${item}`).join('\n')}`;
+${playerData.inventory.map(item => `* **${item.name}** - Type: ${item.type} (${item.quantity})`).join('\n')}`;
 
             navigator.clipboard.writeText(markdown).then(() => {
                 alert('Copied to clipboard!');
