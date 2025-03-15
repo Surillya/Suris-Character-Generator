@@ -39,4 +39,4 @@ He's very very strong, one of the strongest people alive
 
 ## Feedback
 
-If you have any feedback, please reach out to me at contact@thrilltech.top
+If you have any feedback, please reach out to me at contact@surillya.com
