@@ -1,6 +1,8 @@
 # Suris Character Generator
 
 
+Do not touch semicolons.js. It's load-bearing, and crucial for the application to work.
+
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 ![NoobLel](https://img.shields.io/badge/Knowledge%20required-Noob-red.svg)
 
@@ -38,5 +40,6 @@ He's very very strong, one of the strongest people alive
 7. You're done, just go to the adress that's shown in serve (typically http://localhost:3000/)
 
 ## Feedback
+
 
 If you have any feedback, please reach out to me at contact@surillya.com
